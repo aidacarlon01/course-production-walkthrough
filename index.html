@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From storyboard to Canvas</title>
+<meta name="description" content="An interactive walkthrough of five Claude Agent Skills supporting Canvas course production — fictional content, illustrative only.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1C1E21; --muted:#4A5056; --soft:#6B727A;
+  --accent:#0B7285; --accent-deep:#095E6E; --accent-tint:#E7F3F5;
+  --line:#E3E6E8; --bg:#FFFFFF; --bg-soft:#F7F9FA;
+  --ok:#1B6E43; --warn:#A4461B;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,Arial,sans-serif;font-size:16px;line-height:1.6}
+h1,h2,h3,h4{font-family:'Space Grotesk','Inter',sans-serif;line-height:1.2;margin:0}
+a{color:var(--accent-deep)}
+:focus-visible{outline:3px solid var(--accent-deep);outline-offset:2px;border-radius:2px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+.eyebrow{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+
+/* header */
+header{border-bottom:1px solid var(--line);padding:46px 0 34px;background:
+  radial-gradient(640px 260px at 85% -10%, var(--accent-tint), transparent 70%)}
+header h1{font-size:clamp(30px,5vw,44px);margin:10px 0 14px}
+.lede{max-width:66ch;color:var(--muted);font-size:17.5px;margin:0 0 18px}
+.fiction{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;
+  border-radius:20px;padding:6px 14px;font-size:13.5px;color:var(--muted)}
+.fiction .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+
+/* stepper */
+.stepperbar{position:sticky;top:0;background:rgba(255,255,255,.96);backdrop-filter:blur(4px);
+  border-bottom:1px solid var(--line);z-index:10}
+.tabs{display:flex;gap:6px;padding:12px 0;overflow-x:auto}
+.tab{flex:1;min-width:150px;display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);
+  background:#fff;border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;font-weight:600;
+  color:var(--ink);cursor:pointer;text-align:left}
+.tab .n{flex:none;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--soft);color:var(--soft);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.tab[aria-selected="true"]{border-color:var(--accent);background:var(--accent-tint)}
+.tab[aria-selected="true"] .n{background:var(--accent);border-color:var(--accent);color:#fff}
+.tab:hover{border-color:var(--accent)}
+
+/* stage frame */
+.stage{padding:34px 0 10px}
+.stagehead{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;justify-content:space-between;margin-bottom:24px}
+.stagehead h2{font-size:28px;margin:4px 0 8px}
+.stagehead .what{max-width:60ch;color:var(--muted);margin:0}
+.judge{flex:1 1 300px;max-width:400px;border:1px solid var(--line);border-left:4px solid var(--accent);
+  border-radius:8px;background:var(--bg-soft);padding:13px 16px;font-size:14px;color:var(--muted)}
+.judge b{color:var(--ink);display:block;margin-bottom:3px;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+
+.blocks{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:860px){.blocks{grid-template-columns:1fr}}
+.block{border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+.block>.label{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line);
+  background:var(--bg-soft);font-size:12.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-deep)}
+.block>.body{padding:16px 18px}
+.block p{margin:0 0 10px;font-size:14.5px}
+.block p:last-child{margin-bottom:0}
+.span2{grid-column:1/-1}
+
+/* mocks */
+.mock{border:1px solid var(--line);border-radius:8px;background:#fff;font-size:13.5px;overflow:hidden}
+.mock .mhead{padding:8px 14px;border-bottom:1px solid var(--line);background:var(--bg-soft);
+  font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+.mock .mbody{padding:14px 16px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;font-size:13.5px}
+.kv dt{color:var(--soft);margin:0}
+.kv dd{margin:0;font-weight:500}
+.doc p{margin:0 0 8px;font-size:13.5px}
+.doc .dochead{font-weight:700;font-size:14.5px}
+.doc .note{color:var(--soft);font-style:italic}
+ul.finds{list-style:none;margin:0;padding:0;font-size:14px}
+ul.finds li{display:flex;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);align-items:flex-start}
+ul.finds li:last-child{border-bottom:0}
+.ic{flex:none;width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;margin-top:1px}
+.ic.ok{background:#E6F2EB;color:var(--ok)}
+.ic.warn{background:#F9EDE6;color:var(--warn)}
+.finds b{font-weight:600}
+.finds .why{color:var(--muted)}
+
+/* canvas page preview */
+.cnv{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.cnv .bar{display:flex;gap:6px;align-items:center;background:#F1F3F4;border-bottom:1px solid var(--line);padding:7px 12px;font-size:11px;color:var(--soft)}
+.cnv .bar i{width:9px;height:9px;border-radius:50%;background:#D6DADD;display:inline-block}
+.cnv .page{padding:16px 18px}
+.cnv .banner{background:linear-gradient(100deg,var(--accent-deep),var(--accent));border-radius:6px;color:#fff;
+  font-family:'Space Grotesk';font-weight:700;font-size:16px;padding:16px 16px;margin-bottom:12px}
+.cnv h5{font-family:'Space Grotesk';font-size:15px;margin:0 0 6px}
+.cnv p{font-size:12.8px;margin:0 0 10px;color:var(--ink)}
+.well{border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--bg-soft);border-radius:6px;padding:10px 12px;font-size:12.8px;margin-bottom:10px}
+.well b{color:var(--accent-deep)}
+.dl{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:6px;padding:9px 12px;font-size:12.8px;margin-bottom:10px}
+.dl .fico{flex:none;width:28px;height:34px;border:1.5px solid var(--accent);border-radius:4px;position:relative}
+.dl .fico::after{content:"PDF";position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:8px;font-weight:700;color:var(--accent-deep)}
+.imgph{height:88px;border-radius:6px;background:repeating-linear-gradient(45deg,#EDF1F2 0 12px,#F7F9FA 12px 24px);
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--soft);font-size:12px;margin-bottom:4px}
+.cap{font-size:11.5px;color:var(--soft);margin-bottom:10px}
+.vid{position:relative;border-radius:6px;background:#15191C;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.vid .play{width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.vid .play::after{content:"";border-style:solid;border-width:9px 0 9px 15px;border-color:transparent transparent transparent #fff;margin-left:4px}
+.translink{font-size:12.8px}
+
+/* tags / map chips */
+.maptag{display:inline-block;background:var(--accent-tint);color:var(--accent-deep);border-radius:4px;
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 7px;vertical-align:middle;margin-left:6px}
+
+/* sheet table */
+table.sheet{border-collapse:collapse;width:100%;font-size:12.6px}
+.sheet th{background:var(--bg-soft);font-weight:600;text-align:left;color:var(--muted)}
+.sheet th,.sheet td{border:1px solid var(--line);padding:6px 9px}
+.sheet .hl td{background:var(--accent-tint)}
+.sheet code{font-size:11.5px}
+
+/* ticket */
+.ticket{border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:13.5px}
+.ticket .thead{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--bg-soft)}
+.ticket .tid{font-weight:700}
+.badge{border-radius:12px;padding:2px 10px;font-size:11px;font-weight:700;letter-spacing:.05em}
+.badge.assigned{background:#FDF1E7;color:var(--warn)}
+.badge.action{background:#E6F2EB;color:var(--ok)}
+.ticket .tbody{padding:12px 14px}
+.ticket .meta{color:var(--soft);font-size:12px;margin-top:8px}
+
+/* before/after toggle */
+.ba{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.batabs{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--bg-soft)}
+.batab{border:1.5px solid var(--line);background:#fff;border-radius:18px;padding:6px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.batab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.bapanel{padding:14px 16px}
+.diff{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.3px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.diff div{padding:5px 12px;white-space:pre-wrap}
+.diff .rm{background:#FBEDEA;color:#8C2B1D}
+.diff .ad{background:#E9F4EE;color:#174F32}
+
+/* prev/next */
+.navrow{display:flex;justify-content:space-between;align-items:center;margin:26px 0 8px;gap:14px}
+.navbtn{border:1.5px solid var(--accent);background:#fff;color:var(--accent-deep);border-radius:8px;
+  padding:10px 18px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.navbtn.primary{background:var(--accent);color:#fff}
+.navbtn:disabled{border-color:var(--line);color:var(--soft);cursor:default;background:#fff}
+.prog{font-size:13px;color:var(--soft)}
+
+footer{border-top:1px solid var(--line);margin-top:46px;padding:26px 0 46px;font-size:13.5px;color:var(--muted)}
+footer p{max-width:76ch;margin:0 0 8px}
+
+@media (prefers-reduced-motion: no-preference){
+  .panel{animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Case study companion · Creating AI agents for course production</div>
+    <h1>From storyboard to Canvas</h1>
+    <p class="lede">Explore how I used five Claude Agent Skills to support course production, from checking the course setup to reviewing the completed build. This demonstration uses fictional content to illustrate the workflow.</p>
+    <span class="fiction"><span class="dot" aria-hidden="true"></span>Fictional module: FCA_DA_101 &middot; Module 3 — Communicating with data</span>
+  </div>
+</header>
+
+<div class="stepperbar">
+  <div class="wrap">
+    <div class="tabs" role="tablist" aria-label="Production stages">
+      <button class="tab" id="tab-1" role="tab" aria-selected="true" aria-controls="panel-1"><span class="n">1</span>Setup review</button>
+      <button class="tab" id="tab-2" role="tab" aria-selected="false" aria-controls="panel-2" tabindex="-1"><span class="n">2</span>Canvas build</button>
+      <button class="tab" id="tab-3" role="tab" aria-selected="false" aria-controls="panel-3" tabindex="-1"><span class="n">3</span>Video placement</button>
+      <button class="tab" id="tab-4" role="tab" aria-selected="false" aria-controls="panel-4" tabindex="-1"><span class="n">4</span>Feedback actions</button>
+      <button class="tab" id="tab-5" role="tab" aria-selected="false" aria-controls="panel-5" tabindex="-1"><span class="n">5</span>Build review</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+<!-- ================= STAGE 1 ================= -->
+<section class="stage panel" id="panel-1" role="tabpanel" aria-labelledby="tab-1">
+  <div class="stagehead">
+    <div>
+      <div class="eyebrow">Stage 1 of 5</div>
+      <h2>Setup review</h2>
+      <p class="what">Before any content is built, an agent reviews the Canvas sub-account and course shell against the programme&rsquo;s requirements, so problems are caught while they are still cheap to fix.</p>
+    </div>
+    <div class="judge"><b>Where judgement stays</b>The agent flags deviations; a person decides which are genuine problems and which are intentional, like an extended navigation on an orientation course.</div>
+  </div>
+  <div class="blocks">
+    <div class="block">
+      <div class="label">Input &mdash; the course setup</div>
+      <div class="body">
+        <div class="mock">
+          <div class="mhead">FCA_DA_101 &middot; course configuration</div>
+          <div class="mbody">
+            <dl class="kv">
+              <dt>Theme</dt><dd>FCA_DA CSS v2.3 &middot; JS v2.3</dd>
+              <dt>Course navigation</dt><dd>11 items visible</dd>
+              <dt>Grading scheme</dt><dd>FCA standard (pass / not yet)</dd>
+              <dt>Term dates</dt><dd>2 Nov 2026 &ndash; 29 May 2027</dd>
+              <dt>Module locks</dt><dd>Not set</dd>
+              <dt>Template pages</dt><dd>6 pages imported</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="block">
+      <div class="label">The task</div>
+      <div class="body">
+        <p>The <b>setup-review</b> agent reads the live configuration and the template pages, and compares both against the programme&rsquo;s documented standards: the approved theme version, the six-item navigation, the grading scheme, and the markup the template pages should use.</p>
+        <p>It changes nothing &mdash; the output is a findings list, ordered by how expensive each issue becomes if it reaches the build stage.</p>
+      </div>
+    </div>
+    <div class="block span2">
+      <div class="label">Sample output &mdash; the review</div>
+      <div class="body">
+        <ul class="finds">
+          <li><span class="ic ok" aria-hidden="true">&#10003;</span><span><b>Theme current.</b> <span class="why">CSS and JS both v2.3 — matches the programme standard.</span></span></li>
+          <li><span class="ic ok" aria-hidden="true">&#10003;</span><span><b>Grading scheme matches.</b> <span class="why">FCA standard scheme applied at course level.</span></span></li>
+          <li><span class="ic warn" aria-hidden="true">!</span><span><b>Two heading styles in use.</b> <span class="why">Three template pages carry manually-styled H2s instead of the themed class — these would propagate into every built page.</span></span></li>
+          <li><span class="ic warn" aria-hidden="true">!</span><span><b>Navigation shows 11 items; standard is 6.</b> <span class="why">Files, Outcomes and three tool links are visible to learners.</span></span></li>
+          <li><span class="ic warn" aria-hidden="true">!</span><span><b>Module locks not set.</b> <span class="why">All modules currently open; the programme releases Module 1 only at launch.</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="navrow"><button class="navbtn" data-nav="-1" disabled>&larr; Previous</button><span class="prog">Stage 1 of 5</span><button class="navbtn primary" data-nav="1">Next: Canvas build &rarr;</button></div>
+</section>
+
+<!-- ================= STAGE 2 ================= -->
+<section class="stage panel" id="panel-2" role="tabpanel" aria-labelledby="tab-2" hidden>
+  <div class="stagehead">
+    <div>
+      <div class="eyebrow">Stage 2 of 5</div>
+      <h2>Canvas build</h2>
+      <p class="what">An agent converts the approved storyboard into the programme&rsquo;s Canvas HTML &mdash; pages, assessments and discussions in the right module &mdash; behind a dry run, with a reload to verify every page it builds.</p>
+    </div>
+    <div class="judge"><b>Where judgement stays</b>The dry run is approved by a person, and anything ambiguous in the storyboard &mdash; a missing image, an unclear activity &mdash; is queried, never guessed.</div>
+  </div>
+  <div class="blocks">
+    <div class="block">
+      <div class="label">Input &mdash; the approved storyboard</div>
+      <div class="body">
+        <div class="mock doc">
+          <div class="mhead">Storyboard &middot; page 3.4 (approved)</div>
+          <div class="mbody">
+            <p class="dochead">3.4 Choosing the right chart</p>
+            <p><b>H2:</b> Match the chart to the question</p>
+            <p>Body: Every chart answers a kind of question. Comparisons want bars; change over time wants a line; parts of a whole want care&hellip;</p>
+            <p><b>Activity:</b> Before moving on, sketch the chart you would choose for last week&rsquo;s sales data, and note the question it answers.</p>
+            <p><b>Image:</b> chart-decision-tree.png &mdash; alt: &ldquo;Decision tree from question type to chart type&rdquo;</p>
+            <p><b>Download:</b> Chart checklist (PDF)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="block">
+      <div class="label">Sample output &mdash; the built page</div>
+      <div class="body">
+        <div class="cnv">
+          <div class="bar"><i></i><i></i><i></i>&nbsp;FCA_DA_101 &rsaquo; Pages &rsaquo; 3.4 Choosing the right chart</div>
+          <div class="page">
+            <div class="banner">3.4 Choosing the right chart<span class="maptag" style="background:rgba(255,255,255,.2);color:#fff">from page title</span></div>
+            <h5>Match the chart to the question<span class="maptag">H2 &rarr; themed heading</span></h5>
+            <p>Every chart answers a kind of question. Comparisons want bars; change over time wants a line; parts of a whole want care&hellip;</p>
+            <div class="well"><b>Activity.</b> Before moving on, sketch the chart you would choose for last week&rsquo;s sales data, and note the question it answers.<span class="maptag">activity &rarr; well</span></div>
+            <div class="imgph">chart-decision-tree.png</div>
+            <div class="cap">Alt text: &ldquo;Decision tree from question type to chart type&rdquo;<span class="maptag">from Canvas Files</span></div>
+            <div class="dl"><span class="fico" aria-hidden="true"></span>Chart checklist (PDF) &middot; 212 KB<span class="maptag">download card</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="block span2">
+      <div class="label">The checks</div>
+      <div class="body">
+        <ul class="finds">
+          <li><span class="ic ok" aria-hidden="true">&#10003;</span><span><b>Dry run first.</b> <span class="why">The agent lists every page, assessment and discussion it will create — nothing is written until the plan is approved.</span></span></li>
+          <li><span class="ic ok" aria-hidden="true">&#10003;</span><span><b>Copy is verbatim.</b> <span class="why">Authored content is checked byte-for-byte against the storyboard; the build never paraphrases.</span></span></li>
+          <li><span class="ic ok" aria-hidden="true">&#10003;</span><span><b>Verified by reload.</b> <span class="why">Each built page is reloaded and read back to confirm the markup survived Canvas&rsquo;s editor.</span></span></li>
+          <li><span class="ic warn" aria-hidden="true">!</span><span><b>Queried, not guessed.</b> <span class="why">The storyboard&rsquo;s glossary note (&ldquo;term modal: categorical data&rdquo;) had no approved definition — raised with the author instead of invented.</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="navrow"><button class="navbtn" data-nav="-1">&larr; Previous</button><span class="prog">Stage 2 of 5</span><button class="navbtn primary" data-nav="1">Next: Video placement &rarr;</button></div>
+</section>
+
+<!-- ================= STAGE 3 ================= -->
+<section class="stage panel" id="panel-3" role="tabpanel" aria-labelledby="tab-3" hidden>
+  <div class="stagehead">
+    <div>
+      <div class="eyebrow">Stage 3 of 5</div>
+      <h2>Video placement</h2>
+      <p class="what">Course videos live in Wistia and are listed in a media register kept separately from the storyboards. An agent matches each row to its video, retrieves the embed code and transcript, and places both into the correct page markup.</p>
+    </div>
+    <div class="judge"><b>Where judgement stays</b>A register row whose title doesn&rsquo;t match the video it points at is flagged for a person &mdash; a mislabelled video placed &ldquo;successfully&rdquo; is worse than one left unplaced.</div>
+  </div>
+  <div class="blocks">
+    <div class="block">
+      <div class="label">Input &mdash; the media register</div>
+      <div class="body">
+        <table class="sheet">
+          <caption class="visually-hidden">Fictional media register</caption>
+          <tr><th>Page</th><th>Video title</th><th>Host ID</th><th>Status</th></tr>
+          <tr><td>3.2</td><td>Why charts mislead</td><td><code>fca_9d31k</code></td><td>Placed</td></tr>
+          <tr class="hl"><td>3.4</td><td>Choosing the right chart</td><td><code>fca_4f8k2</code></td><td>Approved</td></tr>
+          <tr><td>3.6</td><td>Dashboards that work</td><td><code>fca_7m20q</code></td><td>In edit</td></tr>
+        </table>
+        <p style="font-size:12.5px;color:var(--soft);margin-top:10px">The agent works through rows marked <b>Approved</b>, and leaves the rest.</p>
+      </div>
+    </div>
+    <div class="block">
+      <div class="label">Sample output &mdash; the placed video</div>
+      <div class="body">
+        <div class="cnv">
+          <div class="bar"><i></i><i></i><i></i>&nbsp;FCA_DA_101 &rsaquo; Pages &rsaquo; 3.4 Choosing the right chart</div>
+          <div class="page">
+            <h5>Watch: Choosing the right chart</h5>
+            <div class="vid"><span class="play" aria-hidden="true"></span></div>
+            <p class="translink"><a href="#" onclick="return false">Transcript (opens below the video)</a><span class="maptag">retrieved with the embed</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="block span2">
+      <div class="label">The checks</div>
+      <div class="body">
+        <ul class="finds">
+          <li><span class="ic ok" aria-hidden="true">&#10003;</span><span><b>Right video, right slot.</b> <span class="why">The host ID in the register matches the embedded player, and the page matches the register row.</span></span></li>
+          <li><span class="ic ok" aria-hidden="true">&#10003;</span><span><b>Transcript present.</b> <span class="why">Every placed video carries its transcript — a video without one is left unplaced and flagged.</span></span></li>
+          <li><span class="ic warn" aria-hidden="true">!</span><span><b>Title mismatch flagged.</b> <span class="why">Row 3.6&rsquo;s register title differed from the video&rsquo;s title in the host — held back for a person to resolve.</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="navrow"><button class="navbtn" data-nav="-1">&larr; Previous</button><span class="prog">Stage 3 of 5</span><button class="navbtn primary" data-nav="1">Next: Feedback actions &rarr;</button></div>
+</section>
+
+<!-- ================= STAGE 4 ================= -->
+<section class="stage panel" id="panel-4" role="tabpanel" aria-labelledby="tab-4" hidden>
+  <div class="stagehead">
+    <div>
+      <div class="eyebrow">Stage 4 of 5</div>
+      <h2>Feedback actions</h2>
+      <p class="what">QA feedback arrives as tickets linked to course content. An agent gathers the outstanding tickets, checks each against the approved storyboard, and separates actionable corrections from items needing clarification &mdash; then applies approved fixes behind a dry run.</p>
+    </div>
+    <div class="judge"><b>Where judgement stays</b>A ticket that contradicts the approved storyboard isn&rsquo;t a correction — it goes back to QA with the discrepancy named, not silently &ldquo;fixed&rdquo;.</div>
+  </div>
+  <div class="blocks">
+    <div class="block">
+      <div class="label">Input &mdash; the QA ticket</div>
+      <div class="body">
+        <div class="ticket">
+          <div class="thead"><span class="tid">#214</span><span class="badge assigned">Assigned</span></div>
+          <div class="tbody">
+            <p style="margin:0 0 6px;font-weight:600">Caption refers to &ldquo;Figure 2&rdquo; but the image above it is Figure&nbsp;3.</p>
+            <p style="margin:0;font-size:13px;color:var(--muted)">Page 3.4 &middot; Choosing the right chart &middot; below the decision-tree image</p>
+            <p class="meta">Checked against storyboard: the storyboard says Figure 3. <span class="badge action">Actionable</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="block">
+      <div class="label">The task &mdash; proposed correction</div>
+      <div class="body">
+        <p style="font-size:14px">The dry run shows the current page content and the proposed change, side by side, before anything is written:</p>
+        <div class="diff" role="img" aria-label="Diff: 'Figure 2' replaced by 'Figure 3' in the caption">
+          <div class="rm">&minus; Figure 2: Decision tree from question type to chart type</div>
+          <div class="ad">+ Figure 3: Decision tree from question type to chart type</div>
+        </div>
+      </div>
+    </div>
+    <div class="block span2">
+      <div class="label">Sample output &mdash; before and after</div>
+      <div class="body">
+        <div class="ba">
+          <div class="batabs" role="tablist" aria-label="Before and after">
+            <button class="batab" id="ba-before" role="tab" aria-selected="true" aria-controls="bap-before">1&nbsp; Before</button>
+            <button class="batab" id="ba-after" role="tab" aria-selected="false" aria-controls="bap-after" tabindex="-1">2&nbsp; After</button>
+          </div>
+          <div class="bapanel" id="bap-before" role="tabpanel" aria-labelledby="ba-before">
+            <div class="imgph" style="height:64px">chart-decision-tree.png</div>
+            <p class="cap" style="margin:4px 0 0"><b style="color:var(--warn)">Figure 2:</b> Decision tree from question type to chart type</p>
+          </div>
+          <div class="bapanel" id="bap-after" role="tabpanel" aria-labelledby="ba-after" hidden>
+            <div class="imgph" style="height:64px">chart-decision-tree.png</div>
+            <p class="cap" style="margin:4px 0 0"><b style="color:var(--ok)">Figure 3:</b> Decision tree from question type to chart type</p>
+          </div>
+        </div>
+        <ul class="finds" style="margin-top:12px">
+          <li><span class="ic ok" aria-hidden="true">&#10003;</span><span><b>Verified after writing.</b> <span class="why">The page is re-read, the publication status is confirmed unchanged, and ticket #214 is returned as actioned, ready to move to review.</span></span></li>
+          <li><span class="ic warn" aria-hidden="true">!</span><span><b>Held for clarification.</b> <span class="why">Ticket #219 asked for a stat the storyboard doesn&rsquo;t contain — returned to QA with a note instead of applied.</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="navrow"><button class="navbtn" data-nav="-1">&larr; Previous</button><span class="prog">Stage 4 of 5</span><button class="navbtn primary" data-nav="1">Next: Build review &rarr;</button></div>
+</section>
+
+<!-- ================= STAGE 5 ================= -->
+<section class="stage panel" id="panel-5" role="tabpanel" aria-labelledby="tab-5" hidden>
+  <div class="stagehead">
+    <div>
+      <div class="eyebrow">Stage 5 of 5</div>
+      <h2>Build review</h2>
+      <p class="what">Before anything is published, an agent compares every completed page with the approved storyboard and the build standards: content accuracy and order, components and media, accessibility details, navigation, completion requirements, and links &mdash; including whether internal links survive course cloning.</p>
+    </div>
+    <div class="judge"><b>Where judgement stays</b>The agent produces the evidence; the decision to publish is a person&rsquo;s. Flagged items are investigated, not auto-resolved.</div>
+  </div>
+  <div class="blocks">
+    <div class="block">
+      <div class="label">Input &mdash; storyboard vs completed page</div>
+      <div class="body">
+        <div class="mock doc" style="margin-bottom:12px">
+          <div class="mhead">Storyboard &middot; page 3.4</div>
+          <div class="mbody"><p class="dochead">3.4 Choosing the right chart</p><p>H2 &middot; body &middot; activity &middot; image + alt &middot; download &middot; video + transcript</p></div>
+        </div>
+        <div class="cnv">
+          <div class="bar"><i></i><i></i><i></i>&nbsp;Completed page 3.4</div>
+          <div class="page" style="padding:12px 16px"><p style="margin:0;font-size:12.8px">Banner &middot; themed H2 &middot; body &middot; activity well &middot; image with alt &middot; download card &middot; video with transcript</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="block">
+      <div class="label">Sample output &mdash; the review</div>
+      <div class="body">
+        <ul class="finds">
+          <li><span class="ic ok" aria-hidden="true">&#10003;</span><span><b>Content matches, in order.</b> <span class="why">Every storyboard element is present, verbatim, in sequence.</span></span></li>
+          <li><span class="ic ok" aria-hidden="true">&#10003;</span><span><b>Accessibility details present.</b> <span class="why">Alt text on the image, transcript with the video, one H1 per page.</span></span></li>
+          <li><span class="ic ok" aria-hidden="true">&#10003;</span><span><b>Clone-safe links.</b> <span class="why">Internal links use course-relative paths, so they stay valid when the course is cloned for the next presentation.</span></span></li>
+          <li><span class="ic warn" aria-hidden="true">!</span><span><b>Completion requirement missing.</b> <span class="why">Page 3.4 has no &ldquo;mark as done&rdquo; requirement; the module&rsquo;s standard requires one.</span></span></li>
+          <li><span class="ic warn" aria-hidden="true">!</span><span><b>External link redirects.</b> <span class="why">The chart-checklist source link returns a redirect — update to the final URL before publishing.</span></span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="block span2">
+      <div class="label">The checks &mdash; and the handover</div>
+      <div class="body">
+        <p style="font-size:14.5px">The review ends as a report, not a publish action. The two flagged items above are investigated, fixed through the feedback workflow, and re-checked — then, and only then, a person publishes the module. The time the agents recover is spent here: deeper checks on content, accessibility, navigation and functionality than a compressed schedule would ever have allowed.</p>
+      </div>
+    </div>
+  </div>
+  <div class="navrow"><button class="navbtn" data-nav="-1">&larr; Previous</button><span class="prog">Stage 5 of 5</span><button class="navbtn primary" data-nav="1" disabled>Next &rarr;</button></div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>Illustrative examples only.</b> Everything on this page is fictional — the course, the storyboard, the tickets and the register. Nothing here connects to Canvas, Wistia, BugHerd, or any production system.</p>
+    <p>Companion to the case study <i>Creating AI agents for course production</i>. See also the <a href="https://aidacarlon01.github.io/interactive-catalogue/">interactive pattern catalogue</a> — what the production workflow builds.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs .tab'));
+  var panels = tabs.map(function(t){ return document.getElementById(t.getAttribute('aria-controls')); });
+  var current = 0;
+  function select(i, focus){
+    if (i < 0 || i >= tabs.length) return;
+    tabs[current].setAttribute('aria-selected','false');
+    tabs[current].tabIndex = -1;
+    panels[current].hidden = true;
+    current = i;
+    tabs[i].setAttribute('aria-selected','true');
+    tabs[i].tabIndex = 0;
+    panels[i].hidden = false;
+    if (focus) tabs[i].focus();
+    var y = document.querySelector('.stepperbar').getBoundingClientRect().bottom;
+    if (window.scrollY > 10) window.scrollTo({top:0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto':'smooth'});
+  }
+  tabs.forEach(function(t, i){
+    t.addEventListener('click', function(){ select(i); });
+    t.addEventListener('keydown', function(e){
+      var k = e.key, n = null;
+      if (k === 'ArrowRight' || k === 'ArrowDown') n = (i+1) % tabs.length;
+      else if (k === 'ArrowLeft' || k === 'ArrowUp') n = (i-1+tabs.length) % tabs.length;
+      else if (k === 'Home') n = 0;
+      else if (k === 'End') n = tabs.length-1;
+      if (n !== null){ e.preventDefault(); select(n, true); }
+    });
+  });
+  document.querySelectorAll('.navbtn[data-nav]').forEach(function(b){
+    b.addEventListener('click', function(){ select(current + parseInt(b.getAttribute('data-nav'), 10)); });
+  });
+
+  // before/after
+  var baTabs = [document.getElementById('ba-before'), document.getElementById('ba-after')];
+  var baPanels = [document.getElementById('bap-before'), document.getElementById('bap-after')];
+  var baCur = 0;
+  function baSelect(i, focus){
+    baTabs[baCur].setAttribute('aria-selected','false'); baTabs[baCur].tabIndex = -1; baPanels[baCur].hidden = true;
+    baCur = i;
+    baTabs[i].setAttribute('aria-selected','true'); baTabs[i].tabIndex = 0; baPanels[i].hidden = false;
+    if (focus) baTabs[i].focus();
+  }
+  baTabs.forEach(function(t, i){
+    t.addEventListener('click', function(){ baSelect(i); });
+    t.addEventListener('keydown', function(e){
+      var k = e.key, n = null;
+      if (k==='ArrowRight'||k==='ArrowDown') n=(i+1)%2;
+      else if (k==='ArrowLeft'||k==='ArrowUp') n=(i+1)%2;
+      else if (k==='Home') n=0; else if (k==='End') n=1;
+      if (n!==null){ e.preventDefault(); baSelect(n, true); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
